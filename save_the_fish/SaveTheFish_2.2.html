@@ -1,0 +1,1318 @@
+<!doctype html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8" />
+    <title>Making your first Phaser 3 Game - Part 10</title>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+    <style type="text/css">
+        body {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+var config = {
+    type: Phaser.AUTO,
+    width: 1100,
+    height: 600,
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: -10 },
+            debug: false
+        }
+    },
+    scene: {
+        preload: preload,
+        create: create,
+        update: update
+    }
+};
+
+
+var spaceKey;
+var zeroKey;
+var player;
+var stars;
+var bombs;
+var platforms;
+
+var score = 0;
+var gameOver = false;
+var scoreText;
+
+var youWin;
+var youDie;
+var pressSPACE;
+var pressShift;
+
+var vie = 3;
+
+var invincible = false;
+
+var jumpCD = true;
+var jumpDuration = false;
+var speed = 1;
+
+var shockReady = true;
+var imageShockActif = false;
+var imageShock1;
+var imageShock2;
+var imageShock3;
+
+var murene1;
+var murene2;
+var murene3;
+var murene4;
+var murene5;
+
+var murene1Retour = false;
+var murene2Retour = false;
+var murene3Retour = false;
+var murene4Retour = false;
+var murene5Retour = false;
+
+var nageoireCollected = false;
+
+var oeufCollected = false;
+
+var requin1;
+var requin2;
+var requin7;
+var requin3;
+var requin4;
+var requin5;
+var requin6;
+
+var requin1Retour = false;
+var requin2Retour = false;
+var requin7Retour = true;
+var requin3Retour = false;
+var requin4Retour = true;
+var requin5Retour = false;
+var requin6Retour = false;
+
+var requin1Vivant = true;
+var requin2Vivant = true;
+var requin3Vivant = true;
+var requin4Vivant = true;
+var requin5Vivant = true;
+var requin6Vivant = true;
+var requin7Vivant = true;
+
+var ecranRouge;
+var ecranRougeCooldown = 0;
+var ecranJaune;
+
+var imageJ1;
+var imageJ2;
+var imageJ3;
+var imageJ4;
+var imageJ5;
+var imageJ6;
+
+var shockButton;
+var saut;
+
+var game = new Phaser.Game(config);
+
+
+//--------------------------------------------------+#| Preload ¯\_(ツ)_/¯ |#+--------------------------------------------------------------//
+function preload ()
+{
+    this.load.image('fond', 'assets/fond_ocean_1920-2160.png');
+    
+    this.load.spritesheet('dude', 'assets/animation/animation_final.png', { frameWidth: 60, frameHeight: 60 });
+
+    this.load.image('shock_pret', 'assets/UI/shock_pret.png');
+    this.load.image('shock1', 'assets/animation/shock1.png');
+    this.load.image('shock2', 'assets/animation/shock2.png');
+    this.load.image('shock3', 'assets/animation/shock3.png');
+
+    this.load.image('tiles','assets/jeu_de_tuile.png');
+    this.load.tilemapTiledJSON('map','assets/map.json');
+    
+    this.load.spritesheet('requin', 'assets/ennemies/requin_final.png', { frameWidth: 200, frameHeight: 100 });
+    this.load.spritesheet('requinHaut', 'assets/ennemies/requin_finalHaut.png', { frameWidth: 100, frameHeight: 200 });
+
+    this.load.spritesheet('murene', 'assets/ennemies/murene_animation.png', { frameWidth: 300, frameHeight: 100 });
+
+    this.load.spritesheet('nageoire', 'assets/item/nageoire.png', { frameWidth: 200, frameHeight: 200 });
+
+    this.load.image('oeuf', 'assets/item/oeuf_anguille.png');
+
+    this.load.image('ecranRouge', 'assets/UI/ecran_rouge.png');
+    this.load.image('ecranJaune', 'assets/UI/ecran_jaune.png');
+
+    this.load.image('saut', 'assets/UI/saut.png');
+
+    this.load.image('youWin', 'assets/UI/you_win.png');
+    this.load.image('youDie', 'assets/UI/you_die.png');
+    this.load.image('pressSpace', 'assets/UI/press_SPACE.png');
+    this.load.image('pressShift', 'assets/UI/press_shift.png');
+
+    this.load.image('1image', 'assets/UI/1.png');
+    this.load.image('2image', 'assets/UI/2.png');
+    this.load.image('3image', 'assets/UI/3.png');
+    this.load.image('4image', 'assets/UI/4.png');
+    this.load.image('5image', 'assets/UI/5.png');
+    this.load.image('6image', 'assets/UI/6.png');
+    this.load.image('7image', 'assets/UI/7.png');
+    this.load.image('8image', 'assets/UI/8.png');
+    this.load.image('9image', 'assets/UI/9.png');
+
+    this.load.image('coeur_plein', 'assets/UI/coeur_plein.png');
+    this.load.image('coeur_eclate', 'assets/UI/coeur_eclate.png');
+
+    
+}
+//--------------------------------------------------+#| FIN | Preload ¯\_(ツ)_/¯ |#+--------------------------------------------------------------//
+
+
+function create ()
+{
+    keys = this.input.keyboard.addKeys('SHIFT');
+    this.add.image(960, 1080, 'fond');
+
+    
+    imageShock1 = this.physics.add.group();
+    imageShock2 = this.physics.add.group();
+    imageShock3 = this.physics.add.group();
+
+    /*platforms.create(400, 568, 'ground').setScale(2).refreshBody();
+    platforms.create(600, 400, 'ground');
+    platforms.create(50, 250, 'ground');
+    platforms.create(750, 220, 'ground');*/
+
+    player = this.physics.add.sprite(200, 1960, 'dude');
+
+    /*player.setBounce(0.2);
+    player.setCollideWorldBounds(true);*/
+
+    this.cameras.main.setBounds(0, 0, 1920, 2160);
+    //this.cameras.main.startFollow(player);
+    this.cameras.main.fadeIn(1500);
+    this.cameras.main.setZoom(1);
+    this.cameras.main.pan(1780, 60, 3000, 'Power2');
+    this.cameras.main.zoomTo(2, 3000);
+    this.time.delayedCall(4000, camZoom, null, this);
+
+    murene1 = this.physics.add.sprite(980, 1980,'murene');
+    this.physics.add.overlap(murene1,player, HitEnnemi, null, this);
+    murene1.body.allowGravity = false;
+
+    murene2 = this.physics.add.sprite(1700, 2000,'murene');
+    this.physics.add.overlap(murene2,player, HitEnnemi, null, this);
+    murene2.body.allowGravity = false;
+
+    murene3 = this.physics.add.sprite(820, 480,'murene');
+    this.physics.add.overlap(murene3,player, HitEnnemi, null, this);
+    murene3.body.allowGravity = false;
+
+    murene4 = this.physics.add.sprite(780, 360,'murene');
+    this.physics.add.overlap(murene4,player, HitEnnemi, null, this);
+    murene4.body.allowGravity = false;
+
+    murene5 = this.physics.add.sprite(740, 240,'murene');
+    this.physics.add.overlap(murene5,player, HitEnnemi, null, this);
+    murene5.body.allowGravity = false;
+    
+
+    this.map= this.make.tilemap({ key: 'map'});
+    this.tileset = this.map.addTilesetImage('jeu_de_tuile', 'tiles');
+    this.platform = this.map.createStaticLayer('obstacle', this.tileset, 0, 0);
+    this.oursin= this.map.createStaticLayer('oursin', this.tileset, 0, 0);
+    this.decor = this.map.createStaticLayer('decor', this.tileset, 0, 0);
+
+    
+
+    this.platform.setCollisionByExclusion(-1,true);
+    this.physics.add.collider(player,this.platform);
+
+    this.oursin.setCollisionByExclusion(-1,true);
+    this.physics.add.collider(player,this.oursin, hitOursin, null, this);
+
+    nageoire = this.physics.add.sprite(1720, 120, 'nageoire');
+    this.physics.add.overlap(nageoire,player, victory, null, this);
+    nageoire.body.allowGravity = false;
+
+    oeuf = this.physics.add.image(520, 1560, 'oeuf');
+    oeuf.body.allowGravity = false;
+
+
+    requin1 = this.physics.add.sprite(1640,1800,'requinHaut');
+    this.physics.add.collider(requin1,this.platform, retourRequin1, null, this);
+    this.physics.add.overlap(requin1,player, HitEnnemi, null, this);
+    this.physics.add.overlap(requin1,imageShock1, requin1Shock1, null, this);
+    //this.physics.add.overlap(requin1,imageShock2, requin1Shock2, null, this);
+    //this.physics.add.overlap(requin1,imageShock3, requin1Shock3, null, this);
+
+    requin2 = this.physics.add.sprite(180,1380,'requin').setScale(0.8);
+    this.physics.add.collider(requin2,this.platform, retourRequin2, null, this);
+    this.physics.add.overlap(requin2,player, HitEnnemi, null, this);
+    requin2.body.allowGravity = false;
+    this.physics.add.overlap(requin2,imageShock1, requin2Shock1, null, this);
+
+    requin7 = this.physics.add.sprite(640,940,'requin').setScale(0.8);
+    this.physics.add.collider(requin7,this.platform, retourRequin7, null, this);
+    this.physics.add.overlap(requin7,player, HitEnnemi, null, this);
+    requin7.body.allowGravity = false;
+    this.physics.add.overlap(requin7,imageShock1, requin7Shock1, null, this);
+
+    requin3 = this.physics.add.sprite(1040,700,'requinHaut');
+    this.physics.add.collider(requin3,this.platform, retourRequin3, null, this);
+    this.physics.add.overlap(requin3,player, HitEnnemi, null, this);
+    this.physics.add.overlap(requin3,imageShock1, requin3Shock1, null, this);
+
+    requin4 = this.physics.add.sprite(1160,121,'requinHaut');
+    this.physics.add.collider(requin4,this.platform, retourRequin4, null, this);
+    this.physics.add.overlap(requin4,player, HitEnnemi, null, this);
+    this.physics.add.overlap(requin4,imageShock1, requin4Shock1, null, this);
+
+    requin5 = this.physics.add.sprite(980,970,'requin').setScale(0.8);
+    this.physics.add.collider(requin5,this.platform, retourRequin5, null, this);
+    this.physics.add.overlap(requin5,player, HitEnnemi, null, this);
+    requin5.body.allowGravity = false;
+    this.physics.add.overlap(requin5,imageShock1, requin5Shock1, null, this);
+
+    requin6 = this.physics.add.sprite(1800,420,'requinHaut');
+    this.physics.add.collider(requin6,this.platform, retourRequin6, null, this);
+    this.physics.add.overlap(requin6,player, HitEnnemi, null, this);
+    this.physics.add.overlap(requin6,imageShock1, requin6Shock1, null, this);
+
+   /* requin = { t: 0, vec: new Phaser.Math.Vector2() };
+    path = new Phaser.Curves.Path(1640, 1560);
+    path.lineTo(1160, 1560);
+
+    this.tweens.add({
+        targets: requin1,
+        t: 1,
+        ease: 'Sine.easeInOut',
+        duration: 4000,
+        yoyo: true,
+        repeat: -1
+    });*/
+    saut = this.add.sprite(100, 525, 'saut').setScale(0.8).setScrollFactor(0);
+
+    ecranRouge = this.add.sprite(550, 300, 'ecranRouge').setInteractive().setScrollFactor(0);
+    ecranRouge.alpha = 0;
+    ecranJaune = this.add.sprite(550, 300, 'ecranJaune').setScrollFactor(0);
+    ecranJaune.alpha = 0;
+    youWin = this.add.sprite(550, 300, 'youWin').setScrollFactor(0);
+    youWin.alpha = 0;
+    youDie = this.add.sprite(550, 300, 'youDie').setScrollFactor(0);
+    youDie.alpha = 0;
+    pressSPACE = this.add.sprite(550, 300, 'pressSpace').setScrollFactor(0);
+    pressSPACE.alpha = 0;
+    pressShift = this.add.sprite(550, 300, 'pressShift').setScrollFactor(0);
+    pressShift.alpha = 0;
+
+    coeur1 = this.add.sprite(650, 550, 'coeur_plein').setScale(0.5).setScrollFactor(0);
+    coeur1.alpha = 0.9;
+    coeur2 = this.add.sprite(550, 550, 'coeur_plein').setScale(0.5).setScrollFactor(0);
+    coeur2.alpha = 0.9;
+    coeur3 = this.add.sprite(450, 550, 'coeur_plein').setScale(0.5).setScrollFactor(0);
+    coeur3.alpha = 0.9;
+
+    //-------------------------------------------------:| Tweens Murènes |:--------------------------------------------------------------//
+
+    var tween = this.tweens.add({
+        targets: murene1,
+        x: 660,
+        ease: 'Power1',
+        duration: 3000,
+        yoyo: true,
+        repeat: -1,
+    });
+
+    var tween = this.tweens.add({
+        targets: murene2,
+        x: 1420,
+        ease: 'Power1',
+        duration: 3000,
+        yoyo: true,
+        repeat: -1,
+    });
+
+    var tween = this.tweens.add({
+        targets: murene3,
+        x: 440,
+        ease: 'Power1',
+        duration: 3000,
+        yoyo: true,
+        repeat: -1,
+    });
+
+    var tween = this.tweens.add({
+        targets: murene4,
+        x: 440,
+        ease: 'Power1',
+        duration: 4000,
+        yoyo: true,
+        repeat: -1,
+    });
+
+    var tween = this.tweens.add({
+        targets: murene5,
+        x: 440,
+        ease: 'Power1',
+        duration: 3000,
+        yoyo: true,
+        repeat: -1,
+    });
+
+
+    //--------------------------------------------------:| FIN | Tweens Murènes |:--------------------------------------------------------------//
+
+    //--------------------------------------------------¤| Le Button de Shock |¤--------------------------------------------------------------//
+
+    shockButton = this.add.sprite(1000, 500, 'shock_pret').setScale(0.5).setInteractive().setScrollFactor(0);
+
+    /*this.input.on('gameobjectover', function (pointer, gameObject) {
+    gameObject.setTint(0xffff00);
+    });
+
+    this.input.on('gameobjectout', function (pointer, gameObject) {
+    if (gameObject.input.isDown){
+        gameObject.setTint(0xff0000);
+    }
+    else{
+    gameObject.clearTint();
+    }
+    });
+
+    this.input.on('gameobjectdown', function (pointer, gameObject) {
+    gameObject.setTint(0x555555);
+    });
+
+    this.input.on('gameobjectup', function (pointer, gameObject) {
+    if (gameObject.input.isOver){
+        gameObject.setTint(0x00ff00);
+    }
+    else{
+        gameObject.clearTint();
+    }
+    });*/
+
+    /*this.input.keyboard.on('keydown-NUMPAD_ZERO', function () {
+        shockReady=false;
+        imageShockActif = true
+        imageShock1 = this.add.image(player.x, player.y, "shock1");
+        this.time.delayedCall(50, destroyShock1, null, this);
+    }, this);*/
+
+//--------------------------------------------------¤| FIN | Le Button de Shock |¤--------------------------------------------------------------//
+
+//--------------------------------------------------<| L'animation du perso |>--------------------------------------------------------------//
+
+    this.anims.create({
+        key: 'right',
+        frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+        frameRate: 5,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'up',
+        frames: this.anims.generateFrameNumbers('dude', { start: 4, end: 7 }),
+        frameRate: 5,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'dead',
+        frames: [ { key: 'dude', frame: 8 } ],
+        frameRate: 20
+    });
+    
+    this.anims.create({
+        key: 'jumpRight',
+        frames: [ { key: 'dude', frame: 9 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'jumpLeft',
+        frames: [ { key: 'dude', frame: 10 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'jumpDown',
+        frames: [ { key: 'dude', frame: 11 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'jumpUp',
+        frames: [ { key: 'dude', frame: 12 } ],
+        frameRate: 20
+    });
+
+
+    /*this.anims.create({
+        key: 'left',
+        frames: this.anims.generateFrameNumbers('dude', { start: 0, end: 2 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'turn',
+        frames: [ { key: 'dude', frame: 3 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'right',
+        frames: this.anims.generateFrameNumbers('dude', { start: 4, end: 6 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'up',
+        frames: this.anims.generateFrameNumbers('dude', { start: 7, end: 9 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'down',
+        frames: this.anims.generateFrameNumbers('dude', { start: 10, end: 12 }),
+        frameRate: 5,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'jumpRight',
+        frames: this.anims.generateFrameNumbers('dude', { start: 13, end: 14 }),
+        frameRate: 1,
+        repeat: 30
+    });
+    this.anims.create({
+        key: 'jumpLeft',
+        frames: this.anims.generateFrameNumbers('dude', { start: 15, end: 16 }),
+        frameRate: 1,
+        repeat: -1
+    });*/
+
+    //--------------------------------------------------<| FIN | L'animation du perso |>--------------------------------------------------------------//
+
+    //--------------------------------------------------x| L'animation du requin |x--------------------------------------------------------------//
+
+    this.anims.create({
+       key: 'requin_nage',
+        frames: this.anims.generateFrameNumbers('requin', { start: 0, end: 3 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    this.anims.create({
+       key: 'requin_nageHaut',
+        frames: this.anims.generateFrameNumbers('requinHaut', { start: 0, end: 3 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'requin_mort',
+        frames: [ { key: 'requin', frame: 4 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'requin_mortHaut',
+        frames: [ { key: 'requinHaut', frame: 4 } ],
+        frameRate: 20
+    });
+
+    /*this.anims.create({
+       key: 'requin_gauche',
+        frames: this.anims.generateFrameNumbers('requin', { start: 0, end: 3 }),
+        frameRate: 10,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'requin_droite',
+        frames: this.anims.generateFrameNumbers('requin', { start: 4, end: 7 }),
+        frameRate: 10,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'requin_haut',
+        frames: this.anims.generateFrameNumbers('requin', { start: 0, end: 3 }),
+        frameRate: 10,
+        repeat: -1
+    });
+
+    this.anims.create({
+        key: 'requin_bas',
+        frames: this.anims.generateFrameNumbers('requin', { start: 12, end: 15 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+        key: 'requin_shock',
+        frames: this.anims.generateFrameNumbers('requin', { start: 16, end: 16 }),
+        frameRate: 10,
+        repeat: -1
+    });*/
+
+    //--------------------------------------------------x| FIN | L'animation du requin |x--------------------------------------------------------------//
+
+    //--------------------------------------------------uU|  L'animation des murènes |Uu--------------------------------------------------------------//
+
+    this.anims.create({
+        key: 'mureneAvant',
+        frames: [ { key: 'murene', frame: 0 } ],
+        frameRate: 20
+    });
+
+    this.anims.create({
+        key: 'mureneArriere',
+        frames: [ { key: 'murene', frame: 1 } ],
+        frameRate: 20
+    });
+
+    //--------------------------------------------------uU| FIN | L'animation des murènes |Uu--------------------------------------------------------------//
+
+    //                 Animation de la Nageoire
+    this.anims.create({
+       key: 'nageoireAnim',
+        frames: this.anims.generateFrameNumbers('nageoire', { start: 0, end: 4 }),
+        frameRate: 5,
+        repeat: -1
+    });
+
+    //--------------------------------------------------=>| Reste de la part10 |<=--------------------------------------------------------------//
+
+    //  Input Events
+    cursors = this.input.keyboard.createCursorKeys();
+    
+
+    //  Some stars to collect, 12 in total, evenly spaced 70 pixels apart along the x axis
+    /*stars = this.physics.add.group({
+        key: 'star',
+        repeat: 11,
+        setXY: { x: 12, y: 0, stepX: 70 }
+    });
+
+    stars.children.iterate(function (child) {
+
+        //  Give each star a slightly different bounce
+        child.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+
+    });
+
+    bombs = this.physics.add.group();
+
+    //  The score
+    scoreText = this.add.text(16, 16, 'score: 0', { fontSize: '32px', fill: '#000' });
+
+    //  Collide the player and the stars with the platforms
+    this.physics.add.collider(player, platforms);
+    this.physics.add.collider(stars, platforms);
+    this.physics.add.collider(bombs, platforms);
+
+    //  Checks to see if the player overlaps with any of the stars, if he does call the collectStar function
+    this.physics.add.overlap(player, stars, collectStar, null, this);
+
+    this.physics.add.collider(player, bombs, hitBomb, null, this);*/
+
+    //supplément que j'ai ajouté
+    spacekey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+    zerokey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.NUMPAD_ZERO);
+
+    ctrlkey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.CTRL);
+
+    /*spacekey.on('down', function (key, event) {
+    this.add.image(player.x, player.y, "shock_pret")
+    });*/
+
+    //--------------------------------------------------_[| Physiques |]_--------------------------------------------------------------//
+
+    this.physics.add.overlap(player, oeuf, collectOeuf, null, this);
+
+    //--------------------------------------------------_[| FIN | Physiques |]_--------------------------------------------------------------//
+
+    jumpCooldown=0;
+
+}
+
+
+
+
+
+
+
+
+
+function update ()
+{
+    if (gameOver)
+    {
+        return;
+    }
+
+    //path.getPoint(requin.t, requin1.vec);
+
+    if (invincible==true){
+        this.time.delayedCall(2000, invincibleFalse, null, this);
+    }
+
+    if (nageoireCollected==false){
+        nageoire.anims.play('nageoireAnim', true);
+    }
+
+     
+    if (jumpCD === true){
+        saut.clearTint();
+    }
+    else if (jumpCD === false){
+        saut.setTint(0x555555);
+    }
+
+
+    //--------------------------------------------------~{| Déplacements du personnage |}~--------------------------------------------------------------//
+    if (cursors.left.isDown && !jumpDuration)
+    {
+        player.setVelocityX(-100 * speed);
+        player.setFlipX(true);
+        player.setFlipY(false);
+        player.anims.play('right', true);
+        player.setVelocityY(0);
+    }
+    else if (cursors.right.isDown && !jumpDuration)
+    {   
+        player.setVelocityX(100 * speed);
+        player.setFlipX(false);
+        player.setFlipY(false);
+        player.anims.play('right', true);
+        player.setVelocityY(0);
+    }
+    else if (cursors.down.isDown && !jumpDuration)
+    {
+        player.setVelocityY(80 * speed);
+        player.setFlipX(false);
+        player.setFlipY(true);
+        player.anims.play('up', true);
+        player.setVelocityX(0);
+    }
+    /*else if (cursors.space.isDown && jumpCooldown==0)
+    {
+        player.setVelocityY(-80);
+        player.anims.play('jump', true);
+         this.time.delayedCall(500, jumpCooldown, null, this);
+    }*/
+    else if (cursors.up.isDown && !jumpDuration)
+    {
+        player.setFlipX(false);
+        player.setFlipY(false);
+        player.setVelocityY(-110 *speed);
+        player.anims.play('up', true);
+        player.setVelocityX(0);
+    }
+    else
+    {
+        player.setVelocityX(0);
+        player.setFlipX(false);
+        player.setFlipY(false);
+        player.anims.play('right',true);
+    }
+
+    if (cursors.right.isDown && keys.SHIFT.isDown && jumpCD){
+        jumpCD = false;
+        var jumpDuration = true;
+        speed = 4;
+        //jumpCD1();
+        player.anims.play('jumpRight', true);
+        setTimeout(function(){speed = 1}, 500);
+        setTimeout(function(){var jumpDuration = false}, 500);
+        setTimeout(function(){jumpCD = true}, 6000);
+    }
+    else if (cursors.left.isDown && keys.SHIFT.isDown && jumpCD){
+        jumpCD = false;
+        var jumpDuration = true;
+        speed = 4;
+        //jumpCD1();
+        player.anims.play('jumpLeft', true);
+        setTimeout(function(){speed = 1}, 500);
+        setTimeout(function(){var jumpDuration = false}, 500);
+        setTimeout(function(){jumpCD = true}, 6000);
+    }
+    else if (cursors.up.isDown && keys.SHIFT.isDown && jumpCD){
+        jumpCD = false;
+        var jumpDuration = true;
+        speed = 4;
+        //jumpCD1();
+        player.anims.play('jumpUp', true);
+        setTimeout(function(){speed = 1}, 500);
+        setTimeout(function(){var jumpDuration = false}, 500);
+        setTimeout(function(){jumpCD = true}, 6000);
+    }
+    else if (cursors.down.isDown && keys.SHIFT.isDown && jumpCD){
+        jumpCD = false;
+        var jumpDuration = true;
+        speed = 4;
+        //jumpCD1();
+        player.anims.play('jumDown', true);
+        setTimeout(function(){speed = 1}, 500);
+        setTimeout(function(){var jumpDuration = false}, 500);
+        setTimeout(function(){jumpCD = true}, 6000);
+    }
+
+
+    //--------------------------------------------------~{| FIN | Déplacements  personnage |}~--------------------------------------------------------------//
+
+    //--------------------------------------------------vV| Déplacements  Requins |Vv--------------------------------------------------------------//
+    
+    if (requin1Retour === false && requin1Vivant){
+        requin1.setFlipY(false);
+        requin1.setVelocityY(-100);
+        requin1.anims.play('requin_nageHaut', true);
+    }
+    else if (requin1Retour === true && requin1Vivant){
+        requin1.setFlipY(true);
+        requin1.setVelocityY(100);
+        requin1.anims.play('requin_nageHaut', true);
+    }
+
+    if (requin2Retour === false && requin2Vivant){
+        requin2.setFlipX(false);
+        requin2.setVelocityX(-100);
+        requin2.anims.play('requin_nage', true);
+    }
+    else if (requin2Retour === true && requin2Vivant){
+        requin2.setFlipX(true);
+        requin2.setVelocityX(100);
+        requin2.anims.play('requin_nage', true);
+    }
+
+    if (requin7Retour === false && requin7Vivant){
+        requin7.setFlipX(false);
+        requin7.setVelocityX(-100);
+        requin7.anims.play('requin_nage', true);
+    }
+    else if (requin7Retour === true && requin7Vivant){
+        requin7.setFlipX(true);
+        requin7.setVelocityX(100);
+        requin7.anims.play('requin_nage', true);
+    }
+
+    if (requin3Retour === false && requin3Vivant){
+        requin3.setFlipY(false);
+        requin3.setVelocityY(-100);
+        requin3.anims.play('requin_nageHaut', true);
+    }
+    else if (requin3Retour === true && requin3Vivant){
+        requin3.setFlipY(true);
+        requin3.setVelocityY(100);
+        requin3.anims.play('requin_nageHaut', true);
+    }
+
+    if (requin4Retour === false && requin4Vivant){
+        requin4.setFlipY(false);
+        requin4.setVelocityY(-100);
+        requin4.anims.play('requin_nageHaut', true);
+    }
+    else if (requin4Retour === true && requin4Vivant){
+        requin4.setFlipY(true);
+        requin4.setVelocityY(100);
+        requin4.anims.play('requin_nageHaut', true);
+    }
+
+    if (requin5Retour === false && requin5Vivant){
+        requin5.setFlipX(false);
+        requin5.setVelocityX(-100);
+        requin5.anims.play('requin_nage', true);
+    }
+    else if (requin5Retour === true && requin5Vivant){
+        requin5.setFlipX(true);
+        requin5.setVelocityX(100);
+        requin5.anims.play('requin_nage', true);
+    }
+
+    if (requin6Retour === false && requin6Vivant){
+        requin6.setFlipY(false);
+        requin6.setVelocityY(-100);
+        requin6.anims.play('requin_nageHaut', true);
+    }
+    else if (requin6Retour === true && requin6Vivant){
+        requin6.setFlipY(true);
+        requin6.setVelocityY(100);
+        requin6.anims.play('requin_nageHaut', true);
+    }
+
+
+
+
+    
+    //--------------------------------------------------vV| FIN | Déplacements  Requins |VV--------------------------------------------------------------//
+
+    //--------------------------------------------------~{| Shock |}~--------------------------------------------------------------//
+
+    //Pour le visuelle du Button
+    if (oeufCollected === false){
+        shockButton.setTint(0x555555);
+    } 
+    else if (oeufCollected === true && shockReady === true){
+        shockButton.clearTint();
+    }
+    else if (oeufCollected === true && shockReady === false){
+        shockButton.setTint(0x555555);
+    }
+
+
+    if (cursors.space.isDown  && imageShockActif===false && oeufCollected===true && shockReady===true)
+    {
+        shockReady=false;
+        imageShockActif = true
+        //imageShock1 = this.add.image(player.x, player.y, "shock1").setScale(2);
+        newShock1 = imageShock1.create(player.x, player.y, 'shock1').setScale(2);
+        newShock1.body.setAllowGravity(false);
+        this.time.delayedCall(50, destroyShock1, null, this);
+        ecranJaune.alpha = 0.7;
+        this.time.delayedCall(500, ecranJauneStop, null, this);
+    }
+}
+
+function ecranJauneStop(){
+    ecranJaune.alpha = 0;
+}
+
+function destroyShock1(){
+    newShock1.destroy();
+    //imageShock1.destroy();
+    //imageShock2 = this.add.image(player.x, player.y, "shock2").setScale(2);
+    newShock2 = imageShock2.create(player.x, player.y, 'shock2').setScale(2);
+    newShock2.body.setAllowGravity(false);
+    this.time.delayedCall(100, destroyShock2, null, this);
+}
+function destroyShock2(){
+    newShock2.destroy();
+    //imageShock2.destroy();
+    //imageShock3 = this.add.image(player.x, player.y, "shock3").setScale(2);
+    newShock3 = imageShock3.create(player.x, player.y, 'shock3').setScale(2);
+    newShock3.body.setAllowGravity(false);
+    this.time.delayedCall(200, destroyShock3, null, this);
+}
+function destroyShock3(){
+    newShock3.destroy();
+    //imageShock3.destroy();
+    imageShockActif=false;
+    this.time.delayedCall(200, shockCooldown1, null, this);
+}
+
+function shockCooldown1(){
+    image1 = this.add.image(1000, 500, '8image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown2, null, this);
+}
+function shockCooldown2(){
+    image1.destroy();
+    image2 = this.add.image(1000, 500, '7image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown3, null, this);
+}
+function shockCooldown3(){
+    image2.destroy();
+    image3 = this.add.image(1000, 500, '6image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown4, null, this);
+}
+function shockCooldown4(){
+    image3.destroy();
+    image4 = this.add.image(1000, 500, '5image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown5, null, this);
+}
+function shockCooldown5(){
+    image4.destroy();
+    image5 = this.add.image(1000, 500, '4image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown6, null, this);
+}
+function shockCooldown6(){
+    image5.destroy();
+    image6 = this.add.image(1000, 500, '3image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown7, null, this);
+}
+function shockCooldown7(){
+    image6.destroy();
+    image7 = this.add.image(1000, 500, '2image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown8, null, this);
+}
+function shockCooldown8(){
+    image7.destroy();
+    image8 = this.add.image(1000, 500, '1image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, shockCooldown9, null, this);
+}
+function shockCooldown9(){
+    image8.destroy();
+    shockReady=true;
+}
+//--------------------------------------------------~{| FIN | Shock |}~--------------------------------------------------------------//
+
+//--------------------------------------------------o0| Function oeuf |0o--------------------------------------------------------------//
+
+function collectOeuf (player, oeuf)
+{
+    oeuf.disableBody(true, true);
+    oeufCollected=true;
+    pressSPACE.alpha = 1;
+    this.time.delayedCall(2000, pressSPACEStop, null, this);
+}
+
+//--------------------------------------------------o0| FIN | Function oeuf |0o--------------------------------------------------------------//
+
+//--------------------------------------------------o0| Requin Retours |0o--------------------------------------------------------------//
+
+function retourRequin1 (requin1,platform){
+    if (requin1Retour===false){
+        requin1Retour=true;}
+    else{
+        requin1Retour=false;}
+}
+
+function retourRequin2 (requin2,platform){
+    if (requin2Retour===false){
+        requin2Retour=true;}
+    else{
+        requin2Retour=false;}
+}
+
+function retourRequin7 (requin7,platform){
+    if (requin7Retour===false){
+        requin7Retour=true;}
+    else{
+        requin7Retour=false;}
+}
+
+function retourRequin3 (requin3,platform){
+    if (requin3Retour===false){
+        requin3Retour=true;}
+    else{
+        requin3Retour=false;}
+}
+
+function retourRequin4 (requin4,platform){
+    if (requin4Retour===false){
+        requin4Retour=true;}
+    else{
+        requin4Retour=false;}
+}
+
+function retourRequin5 (requin5,platform){
+    if (requin5Retour===false){
+        requin5Retour=true;}
+    else{
+        requin5Retour=false;}
+}
+
+function retourRequin6 (requin6,platform){
+    if (requin6Retour===false){
+        requin6Retour=true;}
+    else{
+        requin6Retour=false;}
+}
+
+//--------------------------------------------------o0| FIN | Requin Retours |0o--------------------------------------------------------------//
+
+//--------------------------------------------------zZ| Requin Shock |Zz--------------------------------------------------------------//
+
+function requin1Shock1(requin1, imageShock1){
+    requin1Vivant = false;
+    //requin1.body.enable = true;
+    requin1.anims.play('requin_mortHaut', true);
+    this.time.delayedCall(800, requin1ShockFin, null, this);
+}
+/*function requin1Shock2(requin1, imageShock2){
+    console.log(1);
+    requin1Vivant = false;
+    //requin1.body.enable = true;
+    requin1.anims.play('requin_mortHaut', true);
+    this.time.delayedCall(800, requin1ShockFin, null, this);
+}
+function requin1Shock3(requin1, imageShock3){
+    console.log(1);
+    requin1Vivant = false;
+    //requin1.body.enable = true;
+    requin1.anims.play('requin_mortHaut', true);
+    this.time.delayedCall(800, requin1ShockFin, null, this);
+}*/
+function requin1ShockFin(){
+    requin1.disableBody();
+    requin1.setVisible(false);
+    //requin1.destroy();
+}
+
+function requin2Shock1(requin2, imageShock1){
+    requin2Vivant = false;
+    requin2.anims.play('requin_mort', true);
+    this.time.delayedCall(800, requin2ShockFin, null, this);
+}
+function requin2ShockFin(){
+    requin2.disableBody();
+    requin2.setVisible(false);
+}
+
+function requin7Shock1(requin7, imageShock1){
+    requin7Vivant = false;
+    requin7.anims.play('requin_mort', true);
+    this.time.delayedCall(800, requin7ShockFin, null, this);
+}
+function requin7ShockFin(){
+    requin7.disableBody();
+    requin7.setVisible(false);
+}
+
+function requin3Shock1(requin3, imageShock1){
+    requin3Vivant = false;
+    requin3.anims.play('requin_mortHaut', true);
+    this.time.delayedCall(800, requin3ShockFin, null, this);
+}
+function requin3ShockFin(){
+    requin3.disableBody();
+    requin3.setVisible(false);
+}
+function requin4Shock1(requin4, imageShock1){
+    requin4Vivant = false;
+    requin4.anims.play('requin_mortHaut', true);
+    this.time.delayedCall(800, requin4ShockFin, null, this);
+}
+function requin4ShockFin(){
+    requin4.disableBody();
+    requin4.setVisible(false);
+}
+
+function requin5Shock1(requin5, imageShock1){
+    requin5Vivant = false;
+    requin5.anims.play('requin_mort', true);
+    this.time.delayedCall(800, requin5ShockFin, null, this);
+}
+function requin5ShockFin(){
+    requin5.disableBody();
+    requin5.setVisible(false);
+}
+
+function requin6Shock1(requin6, imageShock1){
+    requin6Vivant = false;
+    requin6.anims.play('requin_mortHaut', true);
+    this.time.delayedCall(800, requin6ShockFin, null, this);
+}
+function requin6ShockFin(){
+    requin6.disableBody();
+    requin6.setVisible(false);
+}
+
+
+
+//--------------------------------------------------zZ| FIN | Requin Shock |Zz--------------------------------------------------------------//
+
+//--------------------------------------------------^]| Saut CD |[^--------------------------------------------------------------//
+
+/*function jumpCD1(){
+    imageJ1 = this.add.image(100, 525, '8image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, jumpCD2, null, this);
+}
+function jumpCD2(){
+    imageJ1.destroy();
+    imageJ2 = this.add.image(100, 525, '7image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, jumpCD3, null, this);
+}
+function jumpCD3(){
+    imageJ2.destroy();
+    imageJ3 = this.add.image(100, 525, '6image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, jumpCD4, null, this);
+}
+function jumpCD4(){
+    imageJ3.destroy();
+    imageJ4 = this.add.image(100, 525, '5image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, jumpCD5, null, this);
+}
+function jumpCD5(){
+    imageJ4.destroy();
+    imageJ5 = this.add.image(100, 525, '4image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000, jumpCD6, null, this);
+}
+function jumpCD6(){
+    imageJ5.destroy();
+    imageJ6 = this.add.image(100, 525, '3image').setScale(0.4).setScrollFactor(0);
+    this.time.delayedCall(1000,jumpCDStop, null, this);
+}
+function jumpCDStop(){
+    imageJ6.destroy();
+}*/
+//--------------------------------------------------^]| FIN | Saut CD |[^--------------------------------------------------------------//
+
+//--------------------------------------------------wW| Function Hit |Ww--------------------------------------------------------------//
+
+function HitEnnemi(){
+    if (!invincible){
+        invincible = true;
+        if (vie === 1){
+            coeur3.destroy();
+            coeurEclate = this.add.image(450, 550, 'coeur_eclate').setScrollFactor(0);
+            this.time.delayedCall(200, destroyCoeurEclate, null, this);
+            player.anims.play('dead', true);
+            player.setTint(0xcc0000);
+            //youDie = this.add.text(player.x, player.y, 'You are dead', { fontSize: '64px', fill: '#f00' }).setScrollFactor(0);
+            ecranRouge.alpha = 1;
+            youDie.alpha = 1;
+            gameOver = true;
+            /*this.physics.pause();
+            this.time.delayedCall(2000, gameOver, null, this);*/
+        }
+        else if (vie === 2){
+            
+            coeur2.destroy();
+            coeurEclate = this.add.image(550, 550, 'coeur_eclate').setScrollFactor(0);
+            this.time.delayedCall(200, destroyCoeurEclate, null, this);
+            ecranRouge.alpha = 1;
+            this.time.delayedCall(2000, ecranRougeStop, null, this);
+            vie = 1;
+            player.setTint(0xcc0000);
+        }
+        else if (vie === 3){
+            coeur1.destroy();
+            coeurEclate = this.add.image(650, 550, 'coeur_eclate').setScrollFactor(0);
+            this.time.delayedCall(200, destroyCoeurEclate, null, this);
+            ecranRouge.alpha = 1;
+            this.time.delayedCall(2000, ecranRougeStop, null, this);
+            vie = 2;
+            player.setTint(0xcc0000);
+        }
+    }
+}
+
+function destroyCoeurEclate(){
+    coeurEclate.destroy();
+}
+
+function ecranRougeStop(){
+    ecranRouge.alpha = 0;
+}
+/*
+function ecranRougeAnim(){
+    if (ecranRouge.alpha != 0){
+        ecranRouge.alpha -= -0.05;
+        for (var i = 0; i<20; i++){
+            ecranRouge.alpha -= 0.05;
+            console.log(1);
+        }
+        this.time.delayedCall(100, ecranRougeAnim2, null, this);
+    }
+}
+function ecranRougeAnim2(){
+    if (ecranRouge.alpha != 0){
+        ecranRouge.alpha -= -0.05;
+        this.time.delayedCall(100, ecranRougeAnim, null, this);
+    }
+}*/
+
+function hitOursin(){
+    coeur3.destroy();
+    coeurEclate = this.add.image(450, 550, 'coeur_eclate').setScrollFactor(0);
+    coeur2.destroy();
+    coeurEclate = this.add.image(550, 550, 'coeur_eclate').setScrollFactor(0);
+    coeur1.destroy();
+    coeurEclate = this.add.image(650, 550, 'coeur_eclate').setScrollFactor(0);
+    this.time.delayedCall(200, destroyCoeurEclate, null, this);
+    player.anims.play('dead', true);
+    ecranRouge.alpha = 1;
+    youDie.alpha = 1;
+    player.setTint(0xcc0000);
+    gameOver = true;
+    /*this.physics.pause();
+    this.time.delayedCall(2000, gameOver, null, this);*/
+}
+
+function gameOver(){
+    gameOver = true;
+}
+
+/*function hitRequin (player, requin)
+{
+    player.setTint(0xff0000);
+
+    player.anims.play('turn');
+}*/
+
+//--------------------------------------------------wW| FIN | Function Hit |Ww--------------------------------------------------------------//
+
+//--------------------------------------------------O| Function Reste de la part10 |O--------------------------------------------------------------//
+/*function collectStar (player, star)
+{
+    star.disableBody(true, true);
+
+    //  Add and update the score
+    score += 10;
+    scoreText.setText('Score: ' + score);
+
+    if (stars.countActive(true) === 0)
+    {
+        //  A new batch of stars to collect
+        stars.children.iterate(function (child) {
+
+            child.enableBody(true, child.x, 0, true, true);
+
+        });
+
+        var x = (player.x < 400) ? Phaser.Math.Between(400, 800) : Phaser.Math.Between(0, 400);
+
+        var bomb = bombs.create(x, 16, 'bomb');
+        bomb.setBounce(1);
+        bomb.setCollideWorldBounds(true);
+        bomb.setVelocity(Phaser.Math.Between(-200, 200), 20);
+        bomb.allowGravity = false;
+
+    }
+}
+
+function hitBomb (player, bomb)
+{
+    this.physics.pause();
+
+    player.setTint(0xff0000);
+
+    player.anims.play('turn');
+
+    gameOver = true;
+}*/
+//--------------------------------------------------O| FIN | Function Reste de la part10 |O--------------------------------------------------------------//
+
+//--------------------------------------------------*%| Victoire |%*--------------------------------------------------------------//
+
+function victory(){
+    youWin.alpha = 1;
+    this.physics.pause();
+    gameOver = true;
+}
+
+//--------------------------------------------------*%| FIN | Victoire |%*--------------------------------------------------------------//
+
+function invincibleFalse(){
+    
+    invincible=false;
+    player.clearTint();
+}
+
+function pressSPACEStop(){
+    pressSPACE.alpha = 0;
+}
+
+function camZoom(){
+    this.cameras.main.startFollow(player);
+    this.cameras.main.pan(540, 1840, 2000, 'Power2');
+    this.cameras.main.zoomTo(1, 3000);
+    setTimeout(function(){pressShift.alpha =1}, 3000);
+    this.time.delayedCall(6000, pressShiftAnim, null, this);
+}
+
+function pressShiftAnim(){
+    pressShift.alpha = 0;
+}
+
+</script>
+
+</body>
+</html>
